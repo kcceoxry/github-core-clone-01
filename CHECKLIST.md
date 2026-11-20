@@ -145,22 +145,30 @@ Repo GitHub Bos: BELUM ADA — username GitHub Bos belum diketahui.
 - Belum ada submisi apa pun untuk bounty ini. Kuota: maks 5/hari, 10 total.
   Simpan 1 slot untuk jam-jam terakhir (house masuk di akhir).
 
-## TODO yang butuh username GitHub Bos (urut)
+## TODO yang butuh username GitHub Bos (urut) — SELESAI 20 Nov 07:36 WIB
 
-1. Username GitHub Bos → buat repo publik (nama disarankan
-   `github-core-clone-01`), set About (website + topik makefun) SEBELUM submit.
-2. Ganti `GITHUB-OWNER` di README.md dengan username itu, commit, push.
-3. Push history lokal (root 2eecc3b …) ke repo GitHub — jangan rewrite history.
-4. Parent: buat bundle ASLI dengan (a)–(d) butir 5 di atas.
+1. ✅ Username GitHub Bos (**kcceoxry**) → repo publik
+   `github-core-clone-01` dibuat 2026-11-20T00:36:06Z; About terisi
+   (website https://make.fun/bounty/github-core-clone-01 + deskripsi);
+   topik ai-agents, bounties, code, makefun. Auth via `gh` device flow
+   (Bos authorize kode FBC1-1443); token gh tersimpan di
+   ~/.config/gh/hosts.yml (scope repo) — jangan dihapus sebelum submit.
+2. ✅ `GITHUB-OWNER` di README.md diganti kcceoxry (badge rank/reward),
+   perf README 197→198, commit f15a032.
+3. ✅ Push history lokal (root 2eecc3b …, 11 commit) ke repo GitHub —
+   tanpa rewrite; remote HEAD = f15a032 = local HEAD (diverifikasi via
+   halaman GitHub + API).
+4. ✅ Parent: bundle ASLI dibuat (lihat butir 10 di bawah).
 5. Submit SATU entri (repo GitHub, tanpa --keypair — hadiah tidak di-escrow):
    `node cli/makefun.mjs submit --competition github-core-clone-01
-   --repo-url https://github.com/<owner>/github-core-clone-01 --commit <sha>
-   --title "Forge — GitHub-compatible git forge" --bundle transcripts.tar.gz`
+   --repo-url https://github.com/kcceoxry/github-core-clone-01 --commit f15a0327399a53cbcbc4257434b58cef02b8bbf9
+   --title "Forge — GitHub-compatible git forge" --bundle ~/workspace/makefun/transcripts-final.tar.gz`
+   dengan `MAKEFUN_CREDENTIALS=$HOME/workspace/makefun/credentials-submit.json`
    (atau submit source bundle `--source <repo> --keypair <file>` bila tanpa
    GitHub — perlu anchor dikutip sesi, lihat butir 4).
 6. Cek status: `node cli/makefun.mjs status --submission <id>`.
 7. JANGAN submit sebelum butir 1–4 selesai; entri terakhir sebelum deadline
-   yang dihitung.
+   yang dihitung. ⏳ MENUNGGU persetujuan Bos (aturan: LAPOR sebelum submit).
 
 ## 9. Fase 6 — Determinisme ulang + optimasi perf (20 November 2026)
 
@@ -244,14 +252,17 @@ Anchor dikutip di tool result sesi Fase 6 sebelum write pertama:
   facts". File usage di `~/workspace/makefun/muse-usage.jsonl` (DI LUAR
   repo agar repo tidak dirty — jangan taruh di dalam repo).
 - Repo bersih setelah file usage dipindah keluar.
-- **Bundle ASLI belum dibuat** — dibuat ulang sesaat sebelum submit dengan
-  usage rows SEGAR (query ulang, karena sesi main terus menambah baris)
-  dan setelah README placeholder diganti. Perintah bundle asli:
-  `node cli/makefun.mjs bundle --repo <build dir> --out transcripts.tar.gz
-  --system-prompt ~/workspace/system/system_prompt.md --mcp none --harness
-  muse-app --harness-version 1.3 --provider meta --model
-  ipnext/avocado-5.17-v2 --effort default --muse-usage
-  ~/workspace/makefun/muse-usage.jsonl` (dari kit BARU).
+- **Bundle FINAL (20 Nov 07:37 WIB) — DIBUAT dan DIVERIFIKASI:**
+  `~/workspace/makefun/transcripts-final.tar.gz` (2.630.823 byte, sha256
+  f55c0dab0f94f872e72b8e5b701606bef872e41363d9916b8d69e171ccba52cd).
+  Manifest: 10 sesi, repo.commit f15a0327399a53cbcbc4257434b58cef02b8bbf9
+  (HEAD yang sudah di-push), dirty=false, declared (muse-app / 1.3 /
+  ipnext/avocado-5.17-v2 / meta / default), run prompt = kalimat study
+  Bos (typed), system_prompt uploaded, instructions collected, mcp [].
+  Usage: 102 baris dibaca (main 93, 9 sesi lain 1 each), **47 terpasang**
+  (main 38, 9 sesi lain 1 each). Repo GitHub kcceoxry/github-core-clone-01
+  sudah live (publik, 11 commit, About + 4 topik). ⏳ MENUNGGU persetujuan
+  Bos untuk submit (butir 5 di atas).
 - **Checkpoint bundle (20 Nov 07:30 WIB) — DIBUAT dan DIVERIFIKASI:**
   `~/workspace/makefun/transcripts-checkpoint-20261120.tar.gz`
   (2.515.227 byte, sha256
