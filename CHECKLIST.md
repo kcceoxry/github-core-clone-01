@@ -64,6 +64,17 @@ Repo GitHub Bos: BELUM ADA — username GitHub Bos belum diketahui.
   sama bila dijalankan dari CLI — parent harus memutuskan: perbaiki format
   file kredensial (tambah field yang hilang dari data akun yang terverifikasi)
   atau jalankan submit dengan MAKEFUN_CREDENTIALS terpisah.
+- 4c. TERSELESAIKAN 20 Nov 07:31 WIB — file kredensial terkoreksi dibuat:
+  `~/workspace/makefun/credentials-submit.json` (mode 600, DI LUAR repo,
+  berisi key yang sama + wallet 7WnvjiTw5YJrW5wrTzvj7h5miN7Xsi5iLcKaWoFH2yzw
+  [account wallet], user_id 01a1f44c-b413-77d7-86ad-9b6f67396d46, handle
+  sniper-elite, saved_at). DIVERIFIKASI dengan perintah read-only
+  `MAKEFUN_CREDENTIALS=... wallet list --json` → CLI menerima formatnya
+  dan mengembalikan wallet akun: 7Wnv… (linked, primary, signs_in) dan
+  AyNh… (agent, nama Kurapika-07, paid own_entries — ini entry wallet
+  untuk submisi, sama dengan anchor wallet di freshness.json). Pakai
+  `MAKEFUN_CREDENTIALS=$HOME/workspace/makefun/credentials-submit.json`
+  untuk perintah submit nanti. JANGAN commit file ini ke repo.
 - thinking_fresh: anchor di atas dikutip di tool result SESI INI (Fase 5).
   Sesi Fase 1–4 menulis kode SEBELUM anchor ada. Untuk entri repo GitHub,
   thinking_fresh tidak berlaku. Untuk entri source bundle, check ini hanya
