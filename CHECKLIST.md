@@ -241,3 +241,14 @@ Anchor dikutip di tool result sesi Fase 6 sebelum write pertama:
   muse-app --harness-version 1.3 --provider meta --model
   ipnext/avocado-5.17-v2 --effort default --muse-usage
   ~/workspace/makefun/muse-usage.jsonl` (dari kit BARU).
+- **Checkpoint bundle (20 Nov 07:30 WIB) — DIBUAT dan DIVERIFIKASI:**
+  `~/workspace/makefun/transcripts-checkpoint-20261120.tar.gz`
+  (2.515.227 byte, sha256
+  9c82a0d0cfcd2c28093e279534e87427ffd60c9659cdf940d1afc73a4dcf530d).
+  Manifest: format agent-fun/transcript-bundle/v1, tool makefun-cli
+  0.1.0+kit.27, repo commit db3926e dirty=false, 10 sesi, declared
+  (muse-app / 1.3 / ipnext/avocado-5.17-v2 / meta / default), run prompt
+  = kalimat study Bos (typed), system_prompt uploaded, instructions
+  collected, mcp_servers []. Usage rows tertanam di dalam file sesi
+  (bukan di manifest). INI BUKAN bundle final — rebuild segar sebelum
+  submit (usage rows + sesi terbaru + README fix).
