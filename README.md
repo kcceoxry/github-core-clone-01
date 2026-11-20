@@ -1,12 +1,8 @@
 # github-core-clone-01
 
 [![make.fun · github-core-clone-01](https://make.fun/badge/github-core-clone-01.svg)](https://make.fun/bounty/github-core-clone-01?utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01)
-[![rank](https://make.fun/badge/github-core-clone-01/GITHUB-OWNER/github-core-clone-01/rank.svg)](https://make.fun/bounty/github-core-clone-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01)
-[![reward](https://make.fun/badge/github-core-clone-01/GITHUB-OWNER/github-core-clone-01/reward.svg)](https://make.fun/bounty/github-core-clone-01?utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01)
-
-<!-- TODO (before submit): replace GITHUB-OWNER above with Bos's GitHub username
-     once the GitHub repository exists. The badge URLs must carry the real
-     owner/repo — no placeholder may remain at submission time. -->
+[![rank](https://make.fun/badge/github-core-clone-01/kcceoxry/github-core-clone-01/rank.svg)](https://make.fun/bounty/github-core-clone-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01)
+[![reward](https://make.fun/badge/github-core-clone-01/kcceoxry/github-core-clone-01/reward.svg)](https://make.fun/bounty/github-core-clone-01?utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01)
 
 A GitHub-compatible git forge in one process: git smart HTTP (upload-pack
 protocol v2, receive-pack v0) for clone, fetch and push; the REST v3 API for
@@ -17,7 +13,7 @@ no UI, no outside service, no proxy and no git binary.
 The hot path is a statically linked Go binary (`forge-server`, built from
 `cmd/server` with the standard library only) launched by `main.ts`, which
 binds an ephemeral port, registers it with the trial environment and polls
-for done. Local conformance: 120/120 checks, 15/15 MCP checks, perf 197/200
+for done. Local conformance: 120/120 checks, 15/15 MCP checks, perf 198/200
 on the kit's local runner (see CHECKLIST.md).
 
 ## Run it
