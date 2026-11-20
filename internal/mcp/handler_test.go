@@ -157,8 +157,23 @@ func TestToolsListDeterministic(t *testing.T) {
 	}
 }
 
+// learnViewer teaches the server the viewer login the way the suite does:
+// create a repository through the API, then read it back under its owner.
+func learnViewer(t *testing.T, srv *httptest.Server) {
+	t.Helper()
+	status, _ := restPost(t, srv, "/api/v3/user/repos", map[string]any{"name": "viewer-probe"})
+	if status != http.StatusCreated {
+		t.Fatalf("learn viewer: create repo status %d", status)
+	}
+	status, _ = restGet(t, srv, "/api/v3/repos/adaiversen/viewer-probe")
+	if status != http.StatusOK {
+		t.Fatalf("learn viewer: read repo status %d", status)
+	}
+}
+
 func TestToolFlowRestParity(t *testing.T) {
 	srv := newTestServer(t)
+	learnViewer(t, srv)
 
 	created := callTool(t, srv, "create_repo", map[string]any{"name": "mcp-repo", "description": "via mcp", "private": true})
 	if created["full_name"] != "adaiversen/mcp-repo" || created["name"] != "mcp-repo" {

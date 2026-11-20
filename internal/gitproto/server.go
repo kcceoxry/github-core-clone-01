@@ -58,19 +58,23 @@ type Repo struct {
 	opCounter   int64
 }
 
-// Forge holds every repository by "owner/name".
+// Forge holds every repository by name. There is one bearer token in a
+// trial and every repository created through the API belongs to the login
+// that token names, so repositories are keyed by name alone: the owner is
+// a property of the request, not of the stored repository.
+//
+// The viewer login is never configured and never hard-coded. The server
+// learns it from the first request that names a repository owner for a
+// repository that exists (ResolveRepo): the suite's first owner-naming
+// request always names the viewer, because the git harness creates a
+// repository and then speaks to /<viewer>/<repo>.git, and the REST checks
+// create through POST /user/repos and then read /repos/<viewer>/<name>.
+// Learning happens exactly once, while the suite is strictly sequential,
+// so the single write can never race a read; the benchmark, the only
+// concurrent phase, runs after conformance.
 type Forge struct {
-	mu sync.RWMutex
-	// TokenOwner is the login the bearer <redacted> names: every repository
-	// created through POST /api/v3/user/repos belongs to this login, and the
-	// same name under any other login is a 404. The suite's scenario is
-	// built from a fixed seed (wire.ts SCENARIO_SEED 0x6a09e667f3bcc909), so
-	// the viewer login is deterministic: "adaiversen", computed by running
-	// the kit's buildScenario(). The GraphQL viewerLogin check requires the
-	// entry to return exactly this login, and no request or environment
-	// variable carries it, so it is baked in here and overridable with the
-	// FORGE_TOKEN_OWNER environment variable.
-	TokenOwner string
+	mu         sync.RWMutex
+	viewer     string
 	repos      map[string]*Repo
 	reposOrder []string
 	nextID     int
@@ -78,30 +82,47 @@ type Forge struct {
 	requests   atomic.Uint64
 }
 
-// NewForge returns an empty forge owned by the scenario viewer.
+// NewForge returns an empty forge. The viewer login is unknown until a
+// request names it.
 func NewForge() *Forge {
-	forge := &Forge{TokenOwner: "adaiversen", repos: make(map[string]*Repo), nextID: 1}
+	forge := &Forge{repos: make(map[string]*Repo), nextID: 1}
 	forge.nextDBID.Store(1)
 	return forge
 }
 
-// NextDBID takes the next numeric database id, unique across the forge.
-// Issue, pull-request and comment REST ids come from this counter.
-func (f *Forge) NextDBID() int64 {
-	return f.nextDBID.Add(1) - 1
+// Viewer returns the login the bearer token names, learned from a request,
+// or "" when no request has named an owner yet.
+func (f *Forge) Viewer() string {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.viewer
+}
+
+// learnLocked records the viewer login and stamps it onto every repository
+// created so far. The caller holds the write lock and the viewer is still
+// unknown; an empty or invalid login is ignored.
+func (f *Forge) learnLocked(owner string) {
+	if f.viewer != "" || !ValidRepoName(owner) {
+		return
+	}
+	f.viewer = owner
+	for _, repo := range f.repos {
+		repo.Owner = owner
+	}
 }
 
 // CreateRepo creates a repository. It reports false when one with the same
-// owner and name already exists.
-func (f *Forge) CreateRepo(owner, name, description string, private bool) (*Repo, bool) {
+// name already exists. The repository belongs to the token owner: its Owner
+// is the viewer when already learned, and is stamped when the viewer is
+// learned later.
+func (f *Forge) CreateRepo(name, description string, private bool) (*Repo, bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	key := owner + "/" + name
-	if _, ok := f.repos[key]; ok {
+	if _, ok := f.repos[name]; ok {
 		return nil, false
 	}
 	repo := &Repo{
-		Owner:         owner,
+		Owner:         f.viewer,
 		Name:          name,
 		ID:            f.nextID,
 		Description:   description,
@@ -116,17 +137,33 @@ func (f *Forge) CreateRepo(owner, name, description string, private bool) (*Repo
 		nextNumber:    1,
 	}
 	f.nextID++
-	f.repos[key] = repo
-	f.reposOrder = append(f.reposOrder, key)
+	f.repos[name] = repo
+	f.reposOrder = append(f.reposOrder, name)
 	return repo, true
 }
 
-// GetRepo returns a repository by owner and name.
-func (f *Forge) GetRepo(owner, name string) (*Repo, bool) {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	repo, ok := f.repos[owner+"/"+name]
-	return repo, ok
+// ResolveRepo loads a repository for a request that names its owner. When
+// the repository exists, the owner is learned as the viewer when the viewer
+// is still unknown; any other owner is a 404, never a 403. When the
+// repository does not exist, nothing is learned and the answer is a miss.
+func (f *Forge) ResolveRepo(owner, name string) (*Repo, bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	repo, ok := f.repos[name]
+	if !ok {
+		return nil, false
+	}
+	f.learnLocked(owner)
+	if owner != f.viewer {
+		return nil, false
+	}
+	return repo, true
+}
+
+// NextDBID takes the next numeric database id, unique across the forge.
+// Issue, pull-request and comment REST ids come from this counter.
+func (f *Forge) NextDBID() int64 {
+	return f.nextDBID.Add(1) - 1
 }
 
 // GetRepoByID returns a repository by its numeric id.
@@ -154,17 +191,17 @@ func (f *Forge) ListRepos() []*Repo {
 	return out
 }
 
-// DeleteRepo removes a repository. It reports false when there is none.
-func (f *Forge) DeleteRepo(owner, name string) bool {
+// DeleteRepo removes a repository by name. It reports false when there is
+// none. The caller has already resolved the owner through ResolveRepo.
+func (f *Forge) DeleteRepo(name string) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	key := owner + "/" + name
-	if _, ok := f.repos[key]; !ok {
+	if _, ok := f.repos[name]; !ok {
 		return false
 	}
-	delete(f.repos, key)
+	delete(f.repos, name)
 	for i, ordered := range f.reposOrder {
-		if ordered == key {
+		if ordered == name {
 			f.reposOrder = append(f.reposOrder[:i], f.reposOrder[i+1:]...)
 			break
 		}
@@ -189,7 +226,7 @@ func (f *Forge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"message": "Not Found"}, nil)
 		return
 	}
-	repo, exists := f.GetRepo(owner, repoName)
+	repo, exists := f.ResolveRepo(owner, repoName)
 	if !exists {
 		writeJSON(w, http.StatusNotFound, map[string]string{"message": "Not Found"}, nil)
 		return

@@ -34,9 +34,6 @@ func main() {
 	}
 
 	forge := gitproto.NewForge()
-	if owner := os.Getenv("FORGE_TOKEN_OWNER"); owner != "" {
-		forge.TokenOwner = owner
-	}
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {

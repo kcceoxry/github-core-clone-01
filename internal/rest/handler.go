@@ -157,7 +157,7 @@ func (h *Handler) serveUser(w http.ResponseWriter, r *http.Request, rest []strin
 			return
 		}
 		h.writeJSON(w, http.StatusOK, map[string]any{
-			"login": h.forge.TokenOwner,
+			"login": h.forge.Viewer(),
 			"id":    1,
 			"type":  "User",
 		})
@@ -178,14 +178,11 @@ func (h *Handler) serveUser(w http.ResponseWriter, r *http.Request, rest []strin
 }
 
 // resolveRepo loads a repository for a /repos/{owner}/{name} route: the
-// owner must be the token owner, and the repository must exist. It
-// answers the error itself and reports false when it did.
+// owner is learned as the viewer when the repository exists, and any other
+// owner is a 404. It answers the error itself and reports false when it
+// did.
 func (h *Handler) resolveRepo(w http.ResponseWriter, owner, name string) (*gitproto.Repo, bool) {
-	if owner != h.forge.TokenOwner {
-		h.writeError(w, http.StatusNotFound, "Not Found")
-		return nil, false
-	}
-	repo, ok := h.forge.GetRepo(owner, name)
+	repo, ok := h.forge.ResolveRepo(owner, name)
 	if !ok {
 		h.writeError(w, http.StatusNotFound, "Not Found")
 		return nil, false
@@ -212,7 +209,7 @@ func (h *Handler) serveRepos(w http.ResponseWriter, r *http.Request, rest []stri
 		case http.MethodPatch:
 			h.patchRepo(w, r, repo)
 		case http.MethodDelete:
-			h.forge.DeleteRepo(owner, name)
+			h.forge.DeleteRepo(name)
 			w.Header().Set("X-OAuth-Scopes", "repo, read:org")
 			w.Header().Set("X-GitHub-Request-Id", h.nextRequestID())
 			w.WriteHeader(http.StatusNoContent)
@@ -304,7 +301,7 @@ func (h *Handler) createUserRepo(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, http.StatusUnprocessableEntity, "Validation Failed")
 		return
 	}
-	repo, created := h.forge.CreateRepo(h.forge.TokenOwner, name, stringField(body, "description"), boolField(body, "private", false))
+	repo, created := h.forge.CreateRepo(name, stringField(body, "description"), boolField(body, "private", false))
 	if !created {
 		h.writeError(w, http.StatusUnprocessableEntity, "Repository already exists")
 		return

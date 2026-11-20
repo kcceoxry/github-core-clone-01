@@ -366,7 +366,8 @@ func firstInt(args map[string]any, keys ...string) (int, bool) {
 }
 
 // resolveRepo finds the repository the arguments name. The owner
-// defaults to the token owner; a full "owner/repo" name is split.
+// defaults to the viewer learned so far; a full "owner/repo" name is
+// split. An owner other than the viewer resolves to not found.
 func (h *Handler) resolveRepo(args map[string]any) (*gitproto.Repo, error) {
 	owner := firstString(args, "owner", "owner_login", "org", "organization", "organisation", "user", "user_login", "login", "account", "namespace", "owner_name")
 	name := firstString(args, "repo", "repository", "repository_name", "repo_name", "repo_slug", "project", "project_name")
@@ -379,9 +380,9 @@ func (h *Handler) resolveRepo(args map[string]any) (*gitproto.Repo, error) {
 		return nil, &missingArgumentsError{names: []string{"repo"}}
 	}
 	if owner == "" {
-		owner = h.forge.TokenOwner
+		owner = h.forge.Viewer()
 	}
-	repo, ok := h.forge.GetRepo(owner, name)
+	repo, ok := h.forge.ResolveRepo(owner, name)
 	if !ok {
 		return nil, fmt.Errorf("repository %s/%s not found", owner, name)
 	}
@@ -442,9 +443,9 @@ func (h *Handler) runTool(name string, args map[string]any) (map[string]any, err
 		}
 		description := firstString(args, "description", "about", "summary", "body")
 		private, _ := firstBool(args, "private", "is_private")
-		repo, created := h.forge.CreateRepo(h.forge.TokenOwner, repoName, description, private)
+		repo, created := h.forge.CreateRepo(repoName, description, private)
 		if !created {
-			return nil, fmt.Errorf("repository %s/%s already exists", h.forge.TokenOwner, repoName)
+			return nil, fmt.Errorf("repository %s already exists", repoName)
 		}
 		return repoObject(repo), nil
 	case "get_repo":

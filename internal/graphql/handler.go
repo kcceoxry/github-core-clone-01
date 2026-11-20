@@ -121,13 +121,13 @@ func (h *Handler) execute(op operation) map[string]any {
 	// array naming the field, and the valid part of the data.
 	if strings.Contains(op.Query, "noSuchFieldOnViewer") {
 		return map[string]any{
-			"data":   map[string]any{"viewer": map[string]string{"login": h.forge.TokenOwner}},
+			"data":   map[string]any{"viewer": map[string]string{"login": h.forge.Viewer()}},
 			"errors": []map[string]string{{"message": `Cannot query field "noSuchFieldOnViewer" on type "User".`}},
 		}
 	}
 	switch op.name() {
 	case "ViewerLogin":
-		return dataResponse(map[string]any{"viewer": map[string]string{"login": h.forge.TokenOwner}})
+		return dataResponse(map[string]any{"viewer": map[string]string{"login": h.forge.Viewer()}})
 	case "RepositoryFields":
 		return h.repositoryFields(op)
 	case "Issue_fields":
@@ -331,12 +331,14 @@ func inputVar(vars map[string]any) map[string]any {
 	return input
 }
 
-// lookupRepo reads a repository for a query, or nil when it is unknown.
+// lookupRepo reads a repository for a query, or nil when it is unknown:
+// the owner is learned as the viewer when the repository exists, and any
+// other owner reads as unknown.
 func (h *Handler) lookupRepo(op operation) *gitproto.Repo {
 	owner := stringVar(op.Variables, "owner")
 	name := stringVar(op.Variables, "name")
-	repo, ok := h.forge.GetRepo(owner, name)
-	if !ok || owner != h.forge.TokenOwner {
+	repo, ok := h.forge.ResolveRepo(owner, name)
+	if !ok {
 		return nil
 	}
 	return repo

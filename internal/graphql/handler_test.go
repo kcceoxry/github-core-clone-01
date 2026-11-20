@@ -97,8 +97,24 @@ func rest(t *testing.T, srv *httptest.Server, method, path string, body any) (in
 	return resp.StatusCode, decoded
 }
 
+// learnViewer teaches the server the viewer login the way the suite does:
+// create a repository through the API, then read it back under its owner.
+// The viewer is learned from that first owner-naming request.
+func learnViewer(t *testing.T, srv *httptest.Server) {
+	t.Helper()
+	status, _ := rest(t, srv, "POST", "/api/v3/user/repos", map[string]any{"name": "viewer-probe"})
+	if status != http.StatusCreated {
+		t.Fatalf("learn viewer: create repo status %d", status)
+	}
+	status, _ = rest(t, srv, "GET", "/api/v3/repos/adaiversen/viewer-probe", nil)
+	if status != http.StatusOK {
+		t.Fatalf("learn viewer: read repo status %d", status)
+	}
+}
+
 func TestViewerLogin(t *testing.T) {
 	srv := newTestServer(t)
+	learnViewer(t, srv)
 	data := gqlData(t, srv, `query ViewerLogin { viewer { login } }`, nil)
 	viewer, _ := data["viewer"].(map[string]any)
 	if viewer["login"] != "adaiversen" {
@@ -319,6 +335,7 @@ func TestNodeAndPagination(t *testing.T) {
 
 func TestInvalidFieldAndBatchAndAuth(t *testing.T) {
 	srv := newTestServer(t)
+	learnViewer(t, srv)
 
 	// An unknown field is a 200 with an errors array.
 	status, body := gql(t, srv,

@@ -136,6 +136,57 @@ func pushReport(t *testing.T, body []byte) string {
 	return text.String()
 }
 
+// TestViewerLearnedFromPath pins the viewer rule: the server starts with
+// no viewer, learns it from the first request that names an owner for an
+// existing repository, and afterwards answers a foreign owner with a 404.
+func TestViewerLearnedFromPath(t *testing.T) {
+	server := startTestForge(t)
+	createRepo(t, server.URL, "demo")
+
+	auth := map[string]string{"Authorization": "Bearer test-token"}
+	status, _, body := get(t, server.URL+"/api/v3/user", auth)
+	if status != http.StatusOK {
+		t.Fatalf("GET /api/v3/user before learning: status %d", status)
+	}
+	var user map[string]any
+	if err := json.Unmarshal(body, &user); err != nil {
+		t.Fatalf("GET /api/v3/user: %v", err)
+	}
+	if user["login"] != "" {
+		t.Fatalf("viewer before learning: %v, want empty", user["login"])
+	}
+
+	status, _, _ = get(t, server.URL+"/adaiversen/demo.git/info/refs?service=git-upload-pack", nil)
+	if status != http.StatusOK {
+		t.Fatalf("info/refs under the viewer: status %d", status)
+	}
+	status, _, body = get(t, server.URL+"/api/v3/user", auth)
+	if err := json.Unmarshal(body, &user); err != nil {
+		t.Fatalf("GET /api/v3/user: %v", err)
+	}
+	if user["login"] != "adaiversen" {
+		t.Fatalf("viewer after learning: %v, want adaiversen", user["login"])
+	}
+
+	// The same repository under a foreign owner is a 404, never a 403.
+	status, _, _ = get(t, server.URL+"/stranger/demo.git/info/refs?service=git-upload-pack", nil)
+	if status != http.StatusNotFound {
+		t.Fatalf("foreign owner: status %d, want 404", status)
+	}
+	// An unknown repository under the viewer is a 404 and teaches nothing.
+	status, _, _ = get(t, server.URL+"/adaiversen/missing.git/info/refs?service=git-upload-pack", nil)
+	if status != http.StatusNotFound {
+		t.Fatalf("unknown repo: status %d, want 404", status)
+	}
+	status, _, body = get(t, server.URL+"/api/v3/user", auth)
+	if err := json.Unmarshal(body, &user); err != nil {
+		t.Fatalf("GET /api/v3/user: %v", err)
+	}
+	if user["login"] != "adaiversen" {
+		t.Fatalf("viewer after unknown repo: %v, want adaiversen", user["login"])
+	}
+}
+
 func TestAdvertiseV2(t *testing.T) {
 	server := startTestForge(t)
 	createRepo(t, server.URL, "demo")
