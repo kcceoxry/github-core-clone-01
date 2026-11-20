@@ -239,7 +239,7 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 	}
 	text = append(text, '\n')
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(text)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(text)))
 	w.WriteHeader(status)
 	_, _ = w.Write(text)
 }
@@ -256,7 +256,7 @@ func writeRawResult(w http.ResponseWriter, id any, resultJSON []byte) {
 	body = append(body, resultJSON...)
 	body = append(body, []byte("}\n")...)
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(body)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(body)
 }

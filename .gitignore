@@ -1,5 +1,7 @@
 # Local build/test artefacts — kept on disk, never part of the entry snapshot.
 gitproto.test
 det-*.json
+det6-*.json
 kit-run-*.json
+kit-run6-*.json
 *.log

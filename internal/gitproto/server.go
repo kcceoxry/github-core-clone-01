@@ -18,7 +18,7 @@ package gitproto
 
 import (
 	"encoding/json"
-	"fmt"
+	"strconv"
 	"io"
 	"net/http"
 	"regexp"
@@ -269,7 +269,7 @@ func (f *Forge) serveInfoRefs(w http.ResponseWriter, r *http.Request, repo *Repo
 		return
 	}
 	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(body)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(body)
 }
@@ -295,7 +295,7 @@ func (f *Forge) serveUploadPack(w http.ResponseWriter, r *http.Request, repo *Re
 		return
 	}
 	w.Header().Set("Content-Type", "application/x-git-upload-pack-result")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(out)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(out)))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(out)
 }
@@ -315,14 +315,14 @@ func (f *Forge) serveReceivePack(w http.ResponseWriter, r *http.Request, repo *R
 		return
 	}
 	w.Header().Set("Content-Type", "application/x-git-receive-pack-result")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(out)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(out)))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(out)
 }
 
 // nextRequestID returns a fresh request id for REST replies.
 func (f *Forge) nextRequestID() string {
-	return fmt.Sprintf("req-%d", f.requests.Add(1))
+	return "req-" + strconv.FormatUint(f.requests.Add(1), 10)
 }
 
 // splitGitPath splits a git path of the form /<owner>/<repo>.git/<rest> into
@@ -370,7 +370,7 @@ func writeJSON(w http.ResponseWriter, status int, body any, headers map[string]s
 	for key, value := range headers {
 		w.Header().Set(key, value)
 	}
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(text)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(text)))
 	w.WriteHeader(status)
 	_, _ = w.Write(text)
 }

@@ -150,3 +150,59 @@ Repo GitHub Bos: BELUM ADA — username GitHub Bos belum diketahui.
 6. Cek status: `node cli/makefun.mjs status --submission <id>`.
 7. JANGAN submit sebelum butir 1–4 selesai; entri terakhir sebelum deadline
    yang dihitung.
+
+## 9. Fase 6 — Determinisme ulang + optimasi perf (20 November 2026)
+
+Anchor dikutip di tool result sesi Fase 6 sebelum write pertama:
+**makefun anchor 2eecc3b0551b101ac596ecd1f516b347bba70f76 round 34101466**.
+
+- Determinisme — LULUS: run-det.sh 3x pada binary final (Go 1.27 + raw HTTP
+  + PGO), state.json byte-identik, sha256
+  `a0e98d49854b961230227867235c8615858e006db3763f341ac6154af1445590`
+  (sama persis dengan Fase 5 dan dengan 3 run awal Fase 6). Bukti:
+  `det6-final-run1/2/3-state.json` (di disk, di-.gitignore).
+- Go 1.27.4 — DIPAKAI: dipasang berdampingan di ~/go1.27 (1.25.4 tetap ada
+  di ~/go; sempat tertimpa saat instalasi pertama, lalu dipulihkan dan
+  keduanya diverifikasi bersih). Go 1.27 saja: perf 200/198 (practice/
+  newseed) vs 185/187 di Go 1.25.4 — write membaik drastis (84–99 ms vs
+  125–170 ms). Binary membesar 6,65 → 7,45 MiB (masih < 8 MiB).
+- HTTP hand-rolled raw TCP — DIPAKAI: paket baru `internal/rawhttp`
+  (parser HTTP/1.1 span-based di atas net.Conn, tetap pakai netpoller Go,
+  tanpa epoll mentah). Handler tidak diubah: request disajikan sebagai
+  *http.Request asli dan reply lewat http.ResponseWriter asli; satu Write
+  per request di keep-alive. Dua bug parser ditemukan unit test dan
+  diperbaiki: (1) slice path/query yang menunjuk ke buffer dibaca setelah
+  buffer di-compact — kini dimaterialisasi jadi string sebelum compact;
+  (2) baris header terakhir tanpa newline di dalam head terbuang — kini
+  ditangani sebagai baris final. GOMAXPROCS(2) diset di main. Perbandingan
+  adil (keduanya GOMAXPROCS(2)): raw 198/197 vs std 196/194; read
+  502/530 ms vs 695/681 ms. KEEP raw.
+- PGO — DIPAKAI: profil CPU dikumpulkan dari satu kit run penuh melawan
+  server raw (`--cpuprofile`, 440 ms sampel; Syscall6 41% teratas —
+  konsisten dengan lantai 2 syscall/request). Rebuild `-pgo=cpu.prof`.
+  Geomean p50: 170/161 ms (raw tanpa PGO) → 145/152 ms (dengan PGO).
+  Profil tipis (server I/O-bound, CPU ~1%) tapi gain konsisten di
+  clone/read kedua seed.
+- fmt.Sprintf hot path — DIBERSIHKAN: 10 pemanggilan Sprintf per request
+  (Content-Length, req-id) diganti strconv.Itoa / concat string
+  (profil menunjukkan fmt ~7% sampel CPU).
+- klauspost/compress — TIDAK DIPAKAI: profil menunjukkan flate ~9% dari
+  CPU server yang sudah I/O-bound; stdlib flate sudah di-pool sejak Fase 4;
+  binary sudah 7,59 MiB sehingga headroom ke 8 MiB tinggal ~780 KB;
+  gain yang diharapkan hanya beberapa ms per ronde. Tidak ada VENDORED.md
+  karena tidak ada library pihak ketiga yang di-vendor.
+- Hasil akhir Fase 6 (120/120 di semua run):
+  - practice r1: push 225/50, clone 60/50, read 491/50, write 97/48 → 198
+  - newseed:    push 228/50, clone 64/50, read 507/50, write 74/50 → 200
+  - practice r2: push 195/50, clone 74/48, read 512/50, write 93/49 → 197
+  - Geomean p50 ~153–162 ms (baseline viewer-fix: ~225/202 ms).
+  - Total lokal: 997–1000. Binary final 7.590.048 byte (7,24 MiB).
+- `go vet` + `go test ./...` hijau. Tidak ada server test yang tersisa.
+- Perintah build final (tercatat agar reproducible):
+  `GOROOT=$HOME/go1.27 GOPATH=$HOME/gopath GOTOOLCHAIN=local
+  CGO_ENABLED=0 go build -pgo=/tmp/cpu-pgo.prof -ldflags="-s -w"
+  -trimpath -o forge-server ./cmd/server`
+  (profil PGO ada di /tmp/cpu-pgo.prof — bila hilang, kumpulkan ulang
+  dengan `./forge-server --cpuprofile <file>` + satu kit run penuh.)
+- Root commit / anchor / LICENSE / README placeholder GITHUB-OWNER TIDAK
+  diubah. History tidak di-rewrite.

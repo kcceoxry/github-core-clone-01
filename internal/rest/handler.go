@@ -35,7 +35,7 @@ func NewHandler(forge *gitproto.Forge) *Handler {
 }
 
 func (h *Handler) nextRequestID() string {
-	return fmt.Sprintf("req-%d", h.requests.Add(1))
+	return "req-" + strconv.FormatUint(h.requests.Add(1), 10)
 }
 
 func (h *Handler) writeJSON(w http.ResponseWriter, status int, body any) {
@@ -48,7 +48,7 @@ func (h *Handler) writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-OAuth-Scopes", "repo, read:org")
 	w.Header().Set("X-GitHub-Request-Id", h.nextRequestID())
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(text)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(text)))
 	w.WriteHeader(status)
 	_, _ = w.Write(text)
 }
@@ -64,7 +64,7 @@ func (h *Handler) writeBytes(w http.ResponseWriter, status int, body []byte) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-OAuth-Scopes", "repo, read:org")
 	w.Header().Set("X-GitHub-Request-Id", h.nextRequestID())
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(body)+1))
+	w.Header().Set("Content-Length", strconv.Itoa(len(body)+1))
 	w.WriteHeader(status)
 	_, _ = w.Write(body)
 	_, _ = w.Write([]byte{'\n'})

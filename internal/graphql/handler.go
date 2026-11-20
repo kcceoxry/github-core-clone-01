@@ -81,7 +81,7 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 	}
 	text = append(text, '\n')
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(text)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(text)))
 	w.WriteHeader(status)
 	_, _ = w.Write(text)
 }
