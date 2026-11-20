@@ -206,3 +206,38 @@ Anchor dikutip di tool result sesi Fase 6 sebelum write pertama:
   dengan `./forge-server --cpuprofile <file>` + satu kit run penuh.)
 - Root commit / anchor / LICENSE / README placeholder GITHUB-OWNER TIDAK
   diubah. History tidak di-rewrite.
+
+## 10. Bundle rehearsal — LULUS (20 November 2026, kit CLI BARU)
+
+- Dry-run dengan kit CLI BARU + `--system-prompt
+  ~/workspace/system/system_prompt.md` + `--mcp none` + `--harness muse-app
+  --harness-version 1.3 --provider meta --model ipnext/avocado-5.17-v2
+  --effort default` + `--muse-usage ~/workspace/makefun/muse-usage.jsonl`.
+- **10 sesi Muse app ditemukan** (bukan 8): 8 sesi build (main 64b6c6fb,
+  Fase 1–6, viewer fix) + 2 sesi background proactivity (6d30b246, 7270c4e6
+  — worker runtime.proactivity yang menyiapkan update Nosa/Nosana; sesi
+  mereka ikut ter-bundle karena working directory-nya repo ini).
+- `--harness-version 1.3`: versi harness TIDAK terekam di mana pun
+  (app_version null di trace runtime, session header cuma punya format
+  version 1). 1.3 dipakai karena itu versi Muse Spark saat ini menurut
+  docs produk ("the current version, Muse Spark 1.3"). CLI menyatakan
+  versi hanya dicatat apa adanya dan TIDAK diperiksa terhadap sesi
+  (yang diperiksa hanya harness dan model) — dry-run menerimanya tanpa
+  peringatan.
+- `--model ipnext/avocado-5.17-v2` diterima CLI (sama dengan muse-spark-1.3
+  menurut CLI: "one model, so either is right").
+- `--muse-usage`: 95 baris (main 86, 9 sesi lain 1 each), **40 terpasang**
+  (main 31, 9 sesi lain 1 each — SEMUA 10 sesi punya usage); 51 baris dari
+  sebelum build (ditinggalkan seperti seharusnya); 4 di luar record yang
+  disimpan. Tidak ada lagi peringatan "0 usage rows" atau "missing agent
+  facts". File usage di `~/workspace/makefun/muse-usage.jsonl` (DI LUAR
+  repo agar repo tidak dirty — jangan taruh di dalam repo).
+- Repo bersih setelah file usage dipindah keluar.
+- **Bundle ASLI belum dibuat** — dibuat ulang sesaat sebelum submit dengan
+  usage rows SEGAR (query ulang, karena sesi main terus menambah baris)
+  dan setelah README placeholder diganti. Perintah bundle asli:
+  `node cli/makefun.mjs bundle --repo <build dir> --out transcripts.tar.gz
+  --system-prompt ~/workspace/system/system_prompt.md --mcp none --harness
+  muse-app --harness-version 1.3 --provider meta --model
+  ipnext/avocado-5.17-v2 --effort default --muse-usage
+  ~/workspace/makefun/muse-usage.jsonl` (dari kit BARU).
